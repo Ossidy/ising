@@ -36,7 +36,8 @@ int main(int argc, char* argv[]){
 
     Sampler sampler(-1);
     // sampler.testRandom();
-    sampler.clusterSampling(model.lattice, model.nbrs, model.obs_statis, Params);    
+    sampler.clusterSampling(model.lattice, model.nbrs, model.obs_statis, Params.T, Params.thermalization, Params);    
+    // sampler.sequentialSampling(Params.sim_meth, model.lattice, model.nbrs, model.obs_statis, Params);
 
     return 0;
 }
