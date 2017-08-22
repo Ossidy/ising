@@ -6,24 +6,25 @@
 // constructor
 Flags::Flags(){
     // state configuration
-    length = 8;
-    width = 8;
+    length = 32;
+    width = 32;
     N = length * width;
     // Temperatrue
-    T = 2.26;
+    T = 4.00;
     Tmin = 0.5;
     Tmax = 5;
     Tint = 0.1;
     // steps
-    thermalization = 4300;
-    nsteps = 10000;
+    thermalization = 20000;
+    nsteps = 100000;
     // sample rate
     sample_inter = 50;
     is_output = true;
-    lattice_file = "./notforuse.dat";
+    lattice_file = "./L32/T400.dat";
     // sequential simulation
     is_sequential = false;
     Tmax_2_Tmin = true;
+    sequential_thermalization = 500;
     // simulation method
     sim_meth = "clustering";
 }
