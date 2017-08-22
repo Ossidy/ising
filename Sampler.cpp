@@ -52,7 +52,7 @@ double Sampler::getEnergy(int* lattice, hashMap nbrs,  int N){
 }
 
 
-void Sampler::MetropolisSampling(int* lattice, hashMap nbrs, double* statis, Flags Params, bool is_print){
+void Sampler::MetropolisSampling(int* lattice, hashMap nbrs, double* statis, double T, int thermalization, Flags Params, bool is_print){
     // do Markove sampling by simple Metropolis-Hasting algorithms
     // arguments:
     //      T: temperature in unit of Kelvin degree
@@ -61,10 +61,10 @@ void Sampler::MetropolisSampling(int* lattice, hashMap nbrs, double* statis, Fla
     //      nbrs: a map (dictionary) recording the neighbour of each lattice position
     //      nsteps: number of sampling time
 
-    double T = Params.T;
+    // double T = Params.T;
     int N = Params.N;
     int nsteps = Params.nsteps;
-    int thermalization = Params.thermalization;
+    // int thermalization = Params.thermalization;
     std::ofstream LATTICE;
     // probe();
     LATTICE.open(Params.lattice_file);
@@ -117,7 +117,7 @@ void Sampler::MetropolisSampling(int* lattice, hashMap nbrs, double* statis, Fla
     // std::cout << sample_time << std::endl;
 }
 
-void Sampler::clusterSampling(int* lattice, hashMap nbrs, double* statis, Flags Params, bool is_print){
+void Sampler::clusterSampling(int* lattice, hashMap nbrs, double* statis, double T, int thermalization, Flags Params, bool is_print){
     // do cluster update sampling
     // arguments:
     //      T: temperature in unit of Kelvin degree
@@ -127,13 +127,13 @@ void Sampler::clusterSampling(int* lattice, hashMap nbrs, double* statis, Flags 
     //      Params: class of Flags indicating all simulation parameters 
 
     // parse parameters from Flags Params to clear code
-    double T = Params.T;
+    // double T = Params.T;
     int N = Params.N;
     int nsteps = Params.nsteps;
-    int thermalization = Params.thermalization;
+    // int thermalization = Params.thermalization;
     std::ofstream LATTICE;
     // probe();
-    LATTICE.open(Params.lattice_file);
+    LATTICE.open(Params.lattice_file, std::fstream::in | std::fstream::out | std::fstream::app);
 
     // define statistical parameters 
     double mag_tot = 0;
@@ -143,18 +143,20 @@ void Sampler::clusterSampling(int* lattice, hashMap nbrs, double* statis, Flags 
     int sample_time = 0;
     
     // Wolff algorithm probability
-    double p = 1.0 - exp(-2.0 / Params.T);
+    double p = 1.0 - exp(-2.0 / T);
 
     // define random generator
     std::uniform_real_distribution<> dis_real(0, 1);
     std::uniform_int_distribution<> dis_int(0, N - 1);
 
     // if temperature greater than critical T, increase the sampling time for accuracy
-    if (T > 3){
-        nsteps = (8.5 * T - 22.5) * nsteps;
-    }
+    // if (T > 3){
+    //     nsteps = (8.5 * T - 22.5) * nsteps;
+    // }
 
     // start sampling
+    std::cout << "sampling Temperature: " << T << std::endl;
+
     for (int i = 0; i < nsteps + thermalization + 1; i++){
         // get random generator
         int k = dis_int(gen);
@@ -225,7 +227,38 @@ void Sampler::clusterSampling(int* lattice, hashMap nbrs, double* statis, Flags 
     statis[2] = mag_sqr_tot / sample_time;
     statis[3] = eng_tot / sample_time;
     // std::cout << sample_time << std::endl;
+    LATTICE.close();
 }
+
+void Sampler::sequentialSampling(std::string method, int* lattice, hashMap nbrs, double* statis, Flags Params, bool is_print){
+    if (method == "clustering"){
+        if (Params.Tmax_2_Tmin == true){
+            // first run use typical thermalization
+            clusterSampling(lattice, nbrs, statis, Params.Tmax, Params.thermalization, Params);
+            // then do systematical decreasing with lattice configuration from last run
+            for(int i = 0; i < int((Params.Tmax - Params.Tmin)/Params.Tint); i++){
+                // std::cout << (Params.Tmax - (i+1)*Params.Tint) << std::endl;
+                // if T is too small, initialize T at each time to get randomness
+                // if(T < 2){
+
+                // }
+                clusterSampling(lattice, nbrs, statis, Params.Tmax - (i+1)*Params.Tint, Params.sequential_thermalization, Params);
+            }
+        }
+        else{
+            // first run ues typical termalization
+            clusterSampling(lattice, nbrs, statis, Params.Tmin, Params.thermalization, Params);
+            for(int i = 0; i < int((Params.Tmax - Params.Tmin)/Params.Tint); i++){
+                clusterSampling(lattice, nbrs, statis, Params.Tmin + (i+1)*Params.Tint, Params.sequential_thermalization, Params);
+            }
+        }
+    }
+    else{
+        std::cout << "Method not implemented" << std::endl;
+        std::cout << "0 will be returned" << std::endl;
+    }
+}
+
 
 void Sampler::testRandom(){
     std::uniform_int_distribution<> dis_int(0, 10);
