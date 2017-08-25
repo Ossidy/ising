@@ -4,6 +4,7 @@
 #include<unordered_map> 
 #include<random> 
 #include<vector> 
+#include<map>
 
 #include "Flags.h"
 
@@ -17,10 +18,12 @@ class Lattice{
         int* lattice;
         hashMap nbrs;
         double* obs_statis;
+        std::map<int, std::vector<double>> seq_statis;
 
         double getMagnetization();
         double getEnergy();
 
+        void export_seq_statis();
         void printNbrs();
         void printLattice();
     

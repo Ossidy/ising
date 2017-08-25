@@ -5,6 +5,7 @@
 #include<unordered_set> 
 #include<random>
 #include<vector> 
+#include<string>
 
 #include "Flags.h"
 #include "Lattice.h"
@@ -17,8 +18,10 @@ class Sampler{
         Sampler(int seed);
         ~Sampler();
 
-        void clusterSampling(int* lattice, hashMap nbrs, double* statis, Flags Params, bool is_print=true);
-        void MetropolisSampling(int* lattice, hashMap nbrs, double* statis, Flags Params, bool is_print=true);
+        void clusterSampling(int* lattice, hashMap nbrs, double* statis, double T, int thermalization, Flags Params, bool is_print=true);
+        void MetropolisSampling(int* lattice, hashMap nbrs, double* statis, double T, int thermalization, Flags Params, bool is_print=true);
+
+        void sequentialSampling(std::string method, int* lattice, hashMap nbrs, std::map<int, std::vector<double>>& seq_statis, Flags Params, bool is_print=false);
 
         void testRandom();
     private:

@@ -2,6 +2,8 @@
 #include<random> 
 #include<vector> 
 #include<iostream>
+#include<map>
+#include<fstream>
 
 #include "Lattice.h"
 
@@ -27,6 +29,7 @@ Lattice::Lattice(Flags Params){
     // initialize obeservable arrays in the sequence of:
     // pure magnetization, abs of magnetization, sqr of magnetization and energy
     obs_statis = new double [4];
+
 }
 
 Lattice::~Lattice(){
@@ -110,4 +113,14 @@ void Lattice::printNbrs(){
         std::cout << (*it).first << ":" << "\t";
         printVector((*it).second);
     }
+}
+
+void Lattice::export_seq_statis(){
+    std::ofstream statis;
+    statis.open("statis.txt");
+    for (auto it = seq_statis.cbegin(); it != seq_statis.cend(); it++){
+        std::vector<double> vec = (*it).second;
+        statis << vec[0] << " " << vec[1] << " " << vec[2] << " " << vec[3] << " " << vec[4] << std::endl;
+    }
+    statis.close();
 }

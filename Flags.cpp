@@ -11,7 +11,7 @@ Flags::Flags(){
     N = length * width;
     // Temperatrue
     T = 4.00;
-    Tmin = 0.5;
+    Tmin = 1;
     Tmax = 5;
     Tint = 0.1;
     // steps
@@ -19,7 +19,7 @@ Flags::Flags(){
     nsteps = 100000;
     // sample rate
     sample_inter = 50;
-    is_output = true;
+    is_output = false;
     lattice_file = "./L32/T400.dat";
     // sequential simulation
     is_sequential = false;

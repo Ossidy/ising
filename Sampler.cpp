@@ -4,6 +4,7 @@
 #include<vector> 
 #include<iostream>
 #include<fstream>
+#include<map>
 
 #include "Flags.h"
 #include "Lattice.h"
@@ -133,7 +134,9 @@ void Sampler::clusterSampling(int* lattice, hashMap nbrs, double* statis, double
     // int thermalization = Params.thermalization;
     std::ofstream LATTICE;
     // probe();
-    LATTICE.open(Params.lattice_file, std::fstream::in | std::fstream::out | std::fstream::app);
+    LATTICE.open(Params.lattice_file);
+    // LATTICE.open(Params.lattice_file, std::fstream::in | std::fstream::out | std::fstream::app);
+
 
     // define statistical parameters 
     double mag_tot = 0;
@@ -211,6 +214,7 @@ void Sampler::clusterSampling(int* lattice, hashMap nbrs, double* statis, double
             if (is_print){
                 std::cout << "sampling: " << i - thermalization << "\t" << fabs(mag_cur) << "\t" << eng_cur << std::endl;
             }
+            
             // output sample file if possible
             if (Params.is_output){
                 LATTICE << T << " " << mag_cur << " " << fabs(mag_cur) << " " << mag_cur*mag_cur << " " << eng_cur << " ";
@@ -218,38 +222,68 @@ void Sampler::clusterSampling(int* lattice, hashMap nbrs, double* statis, double
                     LATTICE << lattice[j] << " ";
                 }
                 LATTICE << lattice[N-1] << "\n";
-            }
+            }   
         }
     }
+    
     // record statistics
     statis[0] = mag_tot / sample_time;
     statis[1] = mag_abs_tot / sample_time;
     statis[2] = mag_sqr_tot / sample_time;
     statis[3] = eng_tot / sample_time;
     // std::cout << sample_time << std::endl;
+
     LATTICE.close();
 }
 
-void Sampler::sequentialSampling(std::string method, int* lattice, hashMap nbrs, double* statis, Flags Params, bool is_print){
+void Sampler::sequentialSampling(std::string method, int* lattice,  hashMap nbrs, std::map<int, std::vector<double>>& seq_statis, Flags Params, bool is_print){
+    // construct a map to store statis for each run
+    // seq_statis = std::map<int, std::vector<double>>;
+    double* statis = new double [4];
     if (method == "clustering"){
         if (Params.Tmax_2_Tmin == true){
             // first run use typical thermalization
-            clusterSampling(lattice, nbrs, statis, Params.Tmax, Params.thermalization, Params);
+            clusterSampling(lattice, nbrs, statis, Params.Tmax, Params.thermalization, Params, false);
+
+            std::vector<double> vec(5);
+            vec[0] = Params.Tmax;
+            for (int ind = 1; ind < 5; ind++){
+                vec[ind] = statis[ind-1];
+            }
+            seq_statis[0] = vec;
             // then do systematical decreasing with lattice configuration from last run
             for(int i = 0; i < int((Params.Tmax - Params.Tmin)/Params.Tint); i++){
                 // std::cout << (Params.Tmax - (i+1)*Params.Tint) << std::endl;
                 // if T is too small, initialize T at each time to get randomness
                 // if(T < 2){
-
                 // }
-                clusterSampling(lattice, nbrs, statis, Params.Tmax - (i+1)*Params.Tint, Params.sequential_thermalization, Params);
+                clusterSampling(lattice, nbrs, statis, Params.Tmax - (i+1)*Params.Tint, Params.sequential_thermalization, Params, is_print);
+                // store all statis for each run
+                std::vector<double> vec(5);
+                vec[0] = Params.Tmax - (i+1)*Params.Tint;
+                for (int ind = 1; ind < 5; ind++){
+                    vec[ind] = statis[ind-1];
+                }
+                seq_statis[i+1] = vec;
+                // std::cout << seq_statis[i][0] << std::endl;
             }
         }
         else{
             // first run ues typical termalization
             clusterSampling(lattice, nbrs, statis, Params.Tmin, Params.thermalization, Params);
+            std::vector<double> vec(5);
+            vec[0] = Params.Tmax;
+            for (int ind = 1; ind < 5; ind++){
+                vec[ind] = statis[ind-1];
+            }
+            seq_statis[0] = vec;
             for(int i = 0; i < int((Params.Tmax - Params.Tmin)/Params.Tint); i++){
                 clusterSampling(lattice, nbrs, statis, Params.Tmin + (i+1)*Params.Tint, Params.sequential_thermalization, Params);
+                std::vector<double> vec;
+                for (int ind = 1; ind < 5; ind++){
+                    vec[ind] = statis[ind-1];
+                }
+                seq_statis[i+1] = vec;
             }
         }
     }
@@ -257,6 +291,8 @@ void Sampler::sequentialSampling(std::string method, int* lattice, hashMap nbrs,
         std::cout << "Method not implemented" << std::endl;
         std::cout << "0 will be returned" << std::endl;
     }
+
+    delete statis;
 }
 
 
